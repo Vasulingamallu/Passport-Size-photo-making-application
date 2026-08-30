@@ -1,0 +1,101 @@
+# ==========================================
+# Virtual Environments
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+
+# ==========================================
+# Python Cache
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ==========================================
+# Environment Variables / Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Flask
+# ==========================================
+instance/
+.flaskenv
+
+# ==========================================
+# Database
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==========================================
+# User Uploads and Generated Images
+# ==========================================
+uploads/originals/*
+uploads/processed/*
+uploads/temp/*
+uploads/thumbnails/*
+
+# Keep upload folders in Git
+!uploads/originals/.gitkeep
+!uploads/processed/.gitkeep
+!uploads/temp/.gitkeep
+!uploads/thumbnails/.gitkeep
+
+# ==========================================
+# Logs
+# ==========================================
+*.log
+logs/
+*.log.*
+
+# ==========================================
+# AI Models / Large Model Files
+# ==========================================
+models/
+*.pth
+*.pt
+*.onnx
+*.h5
+
+# ==========================================
+# Testing / Coverage
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+.pytest_temp/
+
+# ==========================================
+# Type Checkers / Linters
+# ==========================================
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# ==========================================
+# IDEs and Editors
+# ==========================================
+.vscode/
+.idea/
+*.code-workspace
+
+# ==========================================
+# Operating System Files
+# ==========================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ==========================================
+# Build / Distribution
+# ==========================================
+build/
+dist/
+*.egg-info/

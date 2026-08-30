@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title">Welcome back, {{ current_user.name }}!</h2>
+            <p class="text-muted">Here's what's happening with your photos today.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary"><i class="bi bi-images"></i> Total Photos</h5>
+                    <h2>{{ total_photos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-success"><i class="bi bi-check-circle"></i> Completed</h5>
+                    <h2>{{ completed }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-info"><i class="bi bi-calendar"></i> This Month</h5>
+                    <h2>{{ this_month }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-warning"><i class="bi bi-download"></i> Downloads</h5>
+                    <h2>{{ downloads }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Recent Photos</h4>
+    {% if recent_photos %}
+    <div class="d-flex overflow-auto mb-4 pb-2" style="gap: 1rem;">
+        {% for photo in recent_photos %}
+        <div class="card shadow-sm" style="min-width: 200px;">
+            <img src="{{ url_for('photos.serve_image', photo_id=photo.id, image_type='thumbnail') }}" class="card-img-top" alt="Thumbnail" style="height: 150px; object-fit: cover;" onerror="this.src='{{ url_for('photos.serve_image', photo_id=photo.id, image_type='original') }}'">
+            <div class="card-body">
+                <h6 class="card-title text-truncate">{{ photo.original_filename }}</h6>
+                <span class="badge bg-{{ 'success' if photo.status == 'completed' else 'warning' }}">{{ photo.status }}</span>
+                <p class="text-muted small mb-0">{{ photo.created_at.strftime('%Y-%m-%d') }}</p>
+                <a href="{{ url_for('photos.view', photo_id=photo.id) }}" class="btn btn-sm btn-outline-primary mt-2">View</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-light text-center mb-4">
+        You haven't uploaded any photos yet.
+    </div>
+    {% endif %}
+
+    <div class="card mb-4 shadow-sm border-0" style="background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%); color: white;">
+        <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-stars me-2"></i>1-Click AI Passport Studio</h4>
+                <p class="mb-0 text-white-50">Upload once — AI auto-aligns, removes background, enhances lighting, crops, and tiles print sheets instantly.</p>
+            </div>
+            <a href="{{ url_for('photos.ai_studio') }}" class="btn btn-light btn-lg fw-bold text-primary px-4 shadow">
+                Launch 1-Click Studio <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Quick Actions</h4>
+    <div class="row text-center mb-5">
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('photos.ai_studio') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-primary">
+                    <div class="card-body py-4">
+                        <i class="bi bi-magic text-primary fs-1"></i>
+                        <h5 class="mt-3 text-dark">1-Click AI Studio</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('photos.upload') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-secondary">
+                    <div class="card-body py-4">
+                        <i class="bi bi-upload text-secondary fs-1"></i>
+                        <h5 class="mt-3 text-dark">Upload Photo</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('photos.camera') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-success">
+                    <div class="card-body py-4">
+                        <i class="bi bi-camera text-success fs-1"></i>
+                        <h5 class="mt-3 text-dark">Capture Photo</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('photos.gallery') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-info">
+                    <div class="card-body py-4">
+                        <i class="bi bi-grid text-info fs-1"></i>
+                        <h5 class="mt-3 text-dark">View Gallery</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

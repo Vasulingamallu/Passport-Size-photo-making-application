@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Environment and Secrets
+.env
+.env.*
+
+# Local SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads & Temp files
+uploads/
+*.temp.jpg
+*.temp.png
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Documentation & Local Scripts
+start.bat
+README.md

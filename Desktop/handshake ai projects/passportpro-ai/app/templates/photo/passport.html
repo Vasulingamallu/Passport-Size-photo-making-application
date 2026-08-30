@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Generate Passport Photo</h2>
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">Preview</div>
+                <div class="card-body text-center" style="min-height: 400px; display: flex; align-items: center; justify-content: center; background: #eee;">
+                    <img id="photo-preview" src="{{ url_for('photos.serve_image', photo_id=photo.id, image_type='processed' if photo.processed_path else 'original') if photo else '' }}" alt="Preview" class="img-fluid" style="max-height: 350px;">
+                    <img id="result-preview" src="" alt="Result" class="img-fluid d-none" style="max-height: 350px;">
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">Settings</div>
+                <div class="card-body">
+                    <form id="generate-form">
+                        <div class="mb-3">
+                            <label class="form-label">Country</label>
+                            <select class="form-select" id="country-select" required>
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Document Type</label>
+                            <select class="form-select" id="doc-type-select" required disabled>
+                                <option value="">Select country first</option>
+                            </select>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="custom-size-toggle">
+                            <label class="form-check-label" for="custom-size-toggle">Use Custom Size</label>
+                        </div>
+                        
+                        <div id="custom-size-section" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Width (mm)</label>
+                                    <input type="number" class="form-control" id="custom-w" value="35">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Height (mm)</label>
+                                    <input type="number" class="form-control" id="custom-h" value="45">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">DPI</label>
+                                <input type="number" class="form-control" id="custom-dpi" value="300">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100" id="generate-btn">Generate</button>
+                    </form>
+                    
+                    <div id="download-section" class="mt-3 d-none">
+                        <a href="#" id="download-btn" class="btn btn-success w-100"><i class="bi bi-download"></i> Download Photo</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const countrySelect = document.getElementById('country-select');
+    const docTypeSelect = document.getElementById('doc-type-select');
+    const customToggle = document.getElementById('custom-size-toggle');
+    const customSection = document.getElementById('custom-size-section');
+    const form = document.getElementById('generate-form');
+    
+    let countriesData = [];
+    
+    // Fetch countries
+    fetch('/passport/countries')
+        .then(r => r.json())
+        .then(data => {
+            countriesData = data;
+            countrySelect.innerHTML = '<option value="">Select a country</option>';
+            data.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c.code;
+                opt.textContent = c.name;
+                countrySelect.appendChild(opt);
+            });
+        });
+        
+    countrySelect.addEventListener('change', function() {
+        const selected = countriesData.find(c => c.code === this.value);
+        docTypeSelect.innerHTML = '<option value="">Select document type</option>';
+        if (selected) {
+            selected.documents.forEach(doc => {
+                let opt = document.createElement('option');
+                opt.value = doc;
+                opt.textContent = doc;
+                docTypeSelect.appendChild(opt);
+            });
+            docTypeSelect.disabled = false;
+        } else {
+            docTypeSelect.disabled = true;
+        }
+    });
+    
+    customToggle.addEventListener('change', function() {
+        if(this.checked) {
+            customSection.classList.remove('d-none');
+            countrySelect.disabled = true;
+            docTypeSelect.disabled = true;
+        } else {
+            customSection.classList.add('d-none');
+            countrySelect.disabled = false;
+            docTypeSelect.disabled = false;
+        }
+    });
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const photoId = '{{ photo.id if photo else 0 }}';
+        if (photoId === '0') return alert('No photo selected');
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+        
+        let endpoint, payload;
+        
+        if (customToggle.checked) {
+            endpoint = `/passport/${photoId}/custom`;
+            payload = {
+                width_mm: parseFloat(document.getElementById('custom-w').value),
+                height_mm: parseFloat(document.getElementById('custom-h').value),
+                dpi: parseInt(document.getElementById('custom-dpi').value)
+            };
+        } else {
+            endpoint = `/passport/${photoId}/generate`;
+            payload = {
+                country_code: countrySelect.value,
+                document_type: docTypeSelect.value
+            };
+        }
+        
+        document.getElementById('generate-btn').disabled = true;
+        document.getElementById('generate-btn').textContent = 'Processing...';
+        
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.download_url) {
+                document.getElementById('photo-preview').classList.add('d-none');
+                document.getElementById('result-preview').src = data.download_url + '?' + new Date().getTime();
+                document.getElementById('result-preview').classList.remove('d-none');
+                
+                document.getElementById('download-btn').href = data.download_url;
+                document.getElementById('download-section').classList.remove('d-none');
+            } else {
+                alert('Error: ' + (data.error || 'Failed to generate passport photo'));
+            }
+        })
+        .catch(err => alert('Error generating photo: ' + err.message))
+        .finally(() => {
+            document.getElementById('generate-btn').disabled = false;
+            document.getElementById('generate-btn').textContent = 'Generate';
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: passportpro-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@passportpro.ai
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: FACE_DETECTION_CONFIDENCE
+        value: "0.5"
+      - key: BACKGROUND_MODEL
+        value: u2net

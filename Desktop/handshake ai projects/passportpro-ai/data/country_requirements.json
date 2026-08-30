@@ -1,0 +1,17 @@
+[
+  {"country_name": "India", "country_code": "IN", "document_type": "Passport", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 70, "head_size_max": 80, "notes": "White background, no glasses"},
+  {"country_name": "India", "country_code": "IN", "document_type": "PAN Card", "width_mm": 25.0, "height_mm": 35.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 50, "head_size_max": 80, "notes": ""},
+  {"country_name": "India", "country_code": "IN", "document_type": "Driving License", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 50, "head_size_max": 80, "notes": ""},
+  {"country_name": "India", "country_code": "IN", "document_type": "Visa", "width_mm": 51.0, "height_mm": 51.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 50, "head_size_max": 80, "notes": ""},
+  {"country_name": "India", "country_code": "IN", "document_type": "Aadhaar", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 50, "head_size_max": 80, "notes": ""},
+  {"country_name": "USA", "country_code": "US", "document_type": "Passport", "width_mm": 51.0, "height_mm": 51.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 50, "head_size_max": 69, "notes": "2x2 inches"},
+  {"country_name": "USA", "country_code": "US", "document_type": "Visa", "width_mm": 51.0, "height_mm": 51.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 50, "head_size_max": 69, "notes": "2x2 inches"},
+  {"country_name": "United Kingdom", "country_code": "GB", "document_type": "Passport", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#E5E5E5", "head_size_min": 64, "head_size_max": 75, "notes": "Light grey or cream background"},
+  {"country_name": "Canada", "country_code": "CA", "document_type": "Passport", "width_mm": 50.0, "height_mm": 70.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 44, "head_size_max": 51, "notes": ""},
+  {"country_name": "Australia", "country_code": "AU", "document_type": "Passport", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 71, "head_size_max": 80, "notes": "White or light grey background"},
+  {"country_name": "Schengen/EU", "country_code": "EU", "document_type": "Visa", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 70, "head_size_max": 80, "notes": "Light grey or white background"},
+  {"country_name": "China", "country_code": "CN", "document_type": "Passport", "width_mm": 33.0, "height_mm": 48.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 58, "head_size_max": 68, "notes": "White background"},
+  {"country_name": "Japan", "country_code": "JP", "document_type": "Passport", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 71, "head_size_max": 80, "notes": ""},
+  {"country_name": "UAE", "country_code": "AE", "document_type": "Passport", "width_mm": 43.0, "height_mm": 55.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 70, "head_size_max": 80, "notes": ""},
+  {"country_name": "Germany", "country_code": "DE", "document_type": "Passport", "width_mm": 35.0, "height_mm": 45.0, "dpi": 300, "background_color": "#FFFFFF", "head_size_min": 70, "head_size_max": 80, "notes": ""}
+]

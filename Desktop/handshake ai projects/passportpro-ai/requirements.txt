@@ -1,0 +1,37 @@
+# Core Framework
+Flask==3.1.*
+Flask-SQLAlchemy==3.1.*
+Flask-Migrate==4.1.*
+Flask-Login==0.6.*
+Flask-WTF==1.2.*
+python-dotenv==1.0.*
+Werkzeug==3.1.*
+requests>=2.31.0
+
+# Image Processing
+opencv-python-headless==4.10.*
+Pillow==11.*
+numpy<2
+
+# AI - Face Detection
+mediapipe==0.10.*
+
+# AI - Background Removal
+rembg[cpu]==2.0.*
+
+# Print Sheet PDF
+fpdf2==2.8.*
+
+# HEIC Support
+pillow-heif==0.18.*
+
+# Security
+email-validator==2.*
+
+# Testing
+pytest==8.*
+pytest-flask==1.*
+
+# Production Web Servers
+gunicorn==23.*
+waitress==3.*

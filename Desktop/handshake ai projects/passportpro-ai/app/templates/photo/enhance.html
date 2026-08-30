@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Photo Enhancement</h2>
+        <a href="{{ url_for('photos.view', photo_id=photo.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span>Preview</span>
+                    <span id="status-badge" class="badge bg-secondary">Original</span>
+                </div>
+                <div class="card-body p-0 d-flex justify-content-center align-items-center position-relative" style="background:#eee; min-height:400px;">
+                    <img id="preview-img" src="{{ url_for('photos.serve_image', photo_id=photo.id, image_type='processed' if photo.processed_path else 'original') }}" class="img-fluid" style="max-height:400px;" alt="Preview">
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light">Auto Enhance</div>
+                <div class="card-body">
+                    <p class="text-muted small">Automatically adjust brightness, contrast, sharpness, colour correction and noise reduction.</p>
+                    <button id="auto-enhance-btn" class="btn btn-primary w-100">
+                        <i class="bi bi-magic"></i> Auto Enhance
+                    </button>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light">Manual Adjustments</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Brightness</span><span class="badge bg-secondary" id="brightness-val">0</span>
+                        </label>
+                        <input type="range" class="form-range" min="-100" max="100" value="0" id="brightness">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Contrast</span><span class="badge bg-secondary" id="contrast-val">0</span>
+                        </label>
+                        <input type="range" class="form-range" min="-100" max="100" value="0" id="contrast">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Sharpness</span><span class="badge bg-secondary" id="sharpness-val">0</span>
+                        </label>
+                        <input type="range" class="form-range" min="0" max="100" value="0" id="sharpness">
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="noiseReduction">
+                        <label class="form-check-label" for="noiseReduction">Noise Reduction</label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="colorCorrect">
+                        <label class="form-check-label" for="colorCorrect">Colour Correction</label>
+                    </div>
+                    <button id="apply-btn" class="btn btn-outline-primary w-100 mt-2">
+                        Apply Selected
+                    </button>
+                </div>
+            </div>
+
+            <a id="download-btn" href="{{ url_for('downloads.download_photo', photo_id=photo.id) }}" class="btn btn-success w-100 mb-2 d-none">
+                <i class="bi bi-download"></i> Download Enhanced
+            </a>
+            <a href="{{ url_for('photos.passport', photo_id=photo.id) }}" class="btn btn-outline-primary w-100">
+                Next: Generate Passport Size <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const photoId = {{ photo.id }};
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Update slider labels
+    ['brightness', 'contrast', 'sharpness'].forEach(id => {
+        const slider = document.getElementById(id);
+        const label = document.getElementById(id + '-val');
+        slider.addEventListener('input', () => label.textContent = slider.value);
+    });
+
+    function sendEnhance(options) {
+        return fetch(`/process/${photoId}/enhance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ options })
+        }).then(r => r.json());
+    }
+
+    function refreshPreview() {
+        const img = document.getElementById('preview-img');
+        img.src = `/photos/${photoId}/image/processed?t=` + Date.now();
+        document.getElementById('status-badge').textContent = 'Enhanced';
+        document.getElementById('status-badge').className = 'badge bg-success';
+        document.getElementById('download-btn').classList.remove('d-none');
+    }
+
+    function setLoading(btn, loading) {
+        btn.disabled = loading;
+        if (loading) {
+            btn.dataset.orig = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+        } else {
+            btn.innerHTML = btn.dataset.orig;
+        }
+    }
+
+    document.getElementById('auto-enhance-btn').addEventListener('click', function() {
+        setLoading(this, true);
+        fetch(`/process/${photoId}/auto`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) refreshPreview();
+            else alert('Error: ' + (data.error || 'Auto-process failed'));
+        })
+        .catch(err => alert('Request failed: ' + err.message))
+        .finally(() => setLoading(this, false));
+    });
+
+    document.getElementById('apply-btn').addEventListener('click', function() {
+        const options = {
+            brightness: parseInt(document.getElementById('brightness').value) !== 0,
+            contrast: parseInt(document.getElementById('contrast').value) !== 0,
+            sharpness: parseInt(document.getElementById('sharpness').value) !== 0,
+            denoise: document.getElementById('noiseReduction').checked,
+            color_correct: document.getElementById('colorCorrect').checked,
+        };
+        setLoading(this, true);
+        sendEnhance(options)
+        .then(data => {
+            if (data.success) refreshPreview();
+            else alert('Error: ' + (data.error || 'Enhancement failed'));
+        })
+        .catch(err => alert('Request failed: ' + err.message))
+        .finally(() => setLoading(this, false));
+    });
+});
+</script>
+{% endblock %}

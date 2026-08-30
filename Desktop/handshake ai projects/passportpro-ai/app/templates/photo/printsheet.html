@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Print Sheet Generator</h2>
+        <a href="{{ url_for('photos.view', photo_id=photo.id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Photo
+        </a>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light">Source Photo</div>
+                <div class="card-body text-center" style="background:#f8f9fa;">
+                    <img src="{{ url_for('photos.serve_image', photo_id=photo.id, image_type='processed' if photo.processed_path else 'original') if photo else '' }}" alt="Source" class="img-fluid rounded shadow-sm" style="max-height: 180px;">
+                    <p class="small text-muted mt-2 mb-0">{% if photo.processed_path %}<span class="badge bg-success">Using Processed Photo</span>{% else %}<span class="badge bg-secondary">Using Original Photo</span>{% endif %}</p>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">Layout Options</div>
+                <div class="card-body">
+                    <form id="print-form">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Sheet Size</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="sheetSize" id="size4x6" value="4x6" checked>
+                                <label class="form-check-label" for="size4x6">4×6 inches (Standard Photo Print)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="sheetSize" id="sizeA4" value="A4">
+                                <label class="form-check-label" for="sizeA4">A4 (Document Paper)</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Number of Photos</label>
+                            <div class="btn-group w-100" role="group" id="photo-count-group">
+                                <input type="radio" class="btn-check" name="photoCount" id="btnradio4" value="4">
+                                <label class="btn btn-outline-primary" for="btnradio4">4</label>
+
+                                <input type="radio" class="btn-check" name="photoCount" id="btnradio6" value="6" checked>
+                                <label class="btn btn-outline-primary" for="btnradio6">6</label>
+
+                                <input type="radio" class="btn-check" name="photoCount" id="btnradio8" value="8">
+                                <label class="btn btn-outline-primary" for="btnradio8">8</label>
+                                
+                                <input type="radio" class="btn-check" name="photoCount" id="btnradio12" value="12">
+                                <label class="btn btn-outline-primary" for="btnradio12">12</label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="cuttingGuides" checked>
+                            <label class="form-check-label" for="cuttingGuides">Add Cutting Guides</label>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Output Format</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="outFormat" id="fmtJpg" value="jpg" checked>
+                                    <label class="form-check-label" for="fmtJpg">JPG Image</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="outFormat" id="fmtPdf" value="pdf">
+                                    <label class="form-check-label" for="fmtPdf">PDF Document</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="generate-btn">
+                            <i class="bi bi-printer me-1"></i> Generate Print Sheet
+                        </button>
+                    </form>
+                    
+                    <a href="#" id="download-btn" class="btn btn-success w-100 mt-3 d-none">
+                        <i class="bi bi-download me-1"></i> Download File
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span>Print Sheet Preview</span>
+                    <span id="preview-badge" class="badge bg-secondary">Wireframe</span>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center bg-dark rounded-bottom p-3" id="grid-preview-container" style="min-height: 520px;">
+                    <!-- Wireframe initial layout -->
+                    <div id="grid-canvas" style="background: white; width: 70%; aspect-ratio: 4/6; display: grid; gap: 8px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); border-radius: 4px;">
+                    </div>
+                    <!-- Live Image Result -->
+                    <img id="live-sheet-img" class="img-fluid d-none rounded shadow" style="max-height: 480px;" alt="Generated Print Sheet">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sizeRadios = document.getElementsByName('sheetSize');
+    const countRadios = document.getElementsByName('photoCount');
+    const gridCanvas = document.getElementById('grid-canvas');
+    const liveImg = document.getElementById('live-sheet-img');
+    const previewBadge = document.getElementById('preview-badge');
+    const form = document.getElementById('print-form');
+    const downloadBtn = document.getElementById('download-btn');
+    
+    function updateGrid() {
+        if (!liveImg.classList.contains('d-none')) {
+            liveImg.classList.add('d-none');
+            gridCanvas.classList.remove('d-none');
+            previewBadge.textContent = 'Wireframe';
+            previewBadge.className = 'badge bg-secondary';
+        }
+        
+        const size = document.querySelector('input[name="sheetSize"]:checked').value;
+        const count = parseInt(document.querySelector('input[name="photoCount"]:checked').value);
+        
+        gridCanvas.style.aspectRatio = size === '4x6' ? '3/2' : '1/1.414';
+        
+        let cols = 2;
+        if (size === '4x6') {
+            cols = count <= 4 ? 2 : (count <= 6 ? 3 : (count <= 8 ? 4 : 4));
+        } else {
+            cols = count <= 4 ? 2 : (count <= 6 ? 2 : (count <= 8 ? 2 : 3));
+        }
+        let rows = Math.ceil(count / cols);
+        
+        gridCanvas.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        gridCanvas.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+        
+        gridCanvas.innerHTML = '';
+        for(let i=0; i<count; i++) {
+            const item = document.createElement('div');
+            item.style.backgroundColor = '#e9ecef';
+            item.style.border = '1px dashed #6c757d';
+            item.style.borderRadius = '2px';
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.justifyContent = 'center';
+            item.innerHTML = '<i class="bi bi-person-fill text-secondary fs-4"></i>';
+            gridCanvas.appendChild(item);
+        }
+    }
+    
+    sizeRadios.forEach(r => r.addEventListener('change', updateGrid));
+    countRadios.forEach(r => r.addEventListener('change', updateGrid));
+    
+    updateGrid(); // initial setup
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const photoId = '{{ photo.id if photo else 0 }}';
+        if (photoId === '0') return alert('No photo selected');
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+        
+        const payload = {
+            sheet_size: document.querySelector('input[name="sheetSize"]:checked').value,
+            photo_count: parseInt(document.querySelector('input[name="photoCount"]:checked').value),
+            cutting_guides: document.getElementById('cuttingGuides').checked,
+            format: document.querySelector('input[name="outFormat"]:checked').value
+        };
+        
+        const btn = document.getElementById('generate-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating Sheet...';
+        
+        fetch(`/download/printsheet/${photoId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if(!response.ok) throw new Error('Generation failed: ' + response.statusText);
+            return response.blob();
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            
+            // If JPG, update live image preview
+            if (payload.format === 'jpg') {
+                liveImg.src = url;
+                liveImg.classList.remove('d-none');
+                gridCanvas.classList.add('d-none');
+                previewBadge.textContent = 'Rendered Sheet';
+                previewBadge.className = 'badge bg-success';
+            } else {
+                previewBadge.textContent = 'PDF Ready';
+                previewBadge.className = 'badge bg-success';
+            }
+            
+            // Set download link
+            downloadBtn.href = url;
+            downloadBtn.download = `printsheet_${photoId}_${payload.sheet_size}.${payload.format}`;
+            downloadBtn.classList.remove('d-none');
+            
+            // Trigger download
+            const tempLink = document.createElement('a');
+            tempLink.href = url;
+            tempLink.download = downloadBtn.download;
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        })
+        .catch(err => alert('Error: ' + err.message))
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-printer me-1"></i> Generate Print Sheet';
+        });
+    });
+});
+</script>
+{% endblock %}

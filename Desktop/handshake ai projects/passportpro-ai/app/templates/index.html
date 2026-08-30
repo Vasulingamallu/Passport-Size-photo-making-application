@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}PassportPro AI - Professional Passport Photos{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center py-5 mb-5 bg-gradient">
+    <div class="container py-5">
+        <h1 class="display-4 fw-bold mb-4">Professional AI-Powered Passport Photos</h1>
+        <p class="lead mb-4">Create perfect, compliant passport and visa photos from your home. Our AI handles the background, lighting, and sizing.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('photos.ai_studio') if current_user.is_authenticated else url_for('auth.register') }}" class="btn btn-primary btn-lg fw-bold shadow">
+                <i class="bi bi-stars me-1"></i> 1-Click AI Passport Studio
+            </a>
+            <a href="{{ url_for('photos.upload') }}" class="btn btn-outline-primary btn-lg bg-white">Upload Photo</a>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <h2 class="text-center fw-bold mb-5">Features</h2>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 feature-card text-center p-4">
+                <i class="bi bi-camera text-primary display-4 mb-3"></i>
+                <h4>Camera Capture</h4>
+                <p class="text-muted">Take photos directly using your webcam or smartphone camera with guided overlays.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 feature-card text-center p-4">
+                <i class="bi bi-person-bounding-box text-primary display-4 mb-3"></i>
+                <h4>AI Background Removal</h4>
+                <p class="text-muted">Automatically remove distracting backgrounds and replace with compliant solid colors.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 feature-card text-center p-4">
+                <i class="bi bi-magic text-primary display-4 mb-3"></i>
+                <h4>Photo Enhancement</h4>
+                <p class="text-muted">Enhance lighting, contrast, and sharpness for professional-quality results.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 feature-card text-center p-4">
+                <i class="bi bi-check-circle text-primary display-4 mb-3"></i>
+                <h4>Quality Validation</h4>
+                <p class="text-muted">Instant validation against ICAO standards for head size, positioning, and quality.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 feature-card text-center p-4">
+                <i class="bi bi-aspect-ratio text-primary display-4 mb-3"></i>
+                <h4>Multi-Size Generator</h4>
+                <p class="text-muted">Generate exact sizes for passports and visas for over 100+ countries.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 feature-card text-center p-4">
+                <i class="bi bi-printer text-primary display-4 mb-3"></i>
+                <h4>Print Sheets</h4>
+                <p class="text-muted">Generate ready-to-print 4x6 layouts with multiple photos for easy printing.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <h2 class="text-center fw-bold mb-5">How It Works</h2>
+    <div class="row text-center g-4">
+        <div class="col-md-3">
+            <div class="fs-1 fw-bold text-primary mb-2">1</div>
+            <i class="bi bi-upload fs-1 mb-3 d-block text-secondary"></i>
+            <h5>Upload or Capture</h5>
+            <p class="text-muted">Take a photo or upload an existing one.</p>
+        </div>
+        <div class="col-md-3">
+            <div class="fs-1 fw-bold text-primary mb-2">2</div>
+            <i class="bi bi-cpu fs-1 mb-3 d-block text-secondary"></i>
+            <h5>AI Processing</h5>
+            <p class="text-muted">Our AI removes the background and adjusts lighting.</p>
+        </div>
+        <div class="col-md-3">
+            <div class="fs-1 fw-bold text-primary mb-2">3</div>
+            <i class="bi bi-globe fs-1 mb-3 d-block text-secondary"></i>
+            <h5>Select Country</h5>
+            <p class="text-muted">Choose your target document and country.</p>
+        </div>
+        <div class="col-md-3">
+            <div class="fs-1 fw-bold text-primary mb-2">4</div>
+            <i class="bi bi-download fs-1 mb-3 d-block text-secondary"></i>
+            <h5>Download</h5>
+            <p class="text-muted">Get your perfectly formatted photos instantly.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,623 @@
+{% extends "base.html" %}
+
+{% block title %}1-Click AI Passport Studio - PassportPro AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .studio-card {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .color-swatch-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 2px solid #ccc;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .color-swatch-btn.active, .color-swatch-btn:hover {
+        border-color: #0d6efd;
+        transform: scale(1.1);
+        box-shadow: 0 0 0 3px rgba(13,110,253,0.25);
+    }
+    .recent-thumb-card {
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.15s ease;
+    }
+    .recent-thumb-card.active, .recent-thumb-card:hover {
+        border-color: #0d6efd;
+        transform: translateY(-2px);
+    }
+    .ai-gradient-btn {
+        background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        box-shadow: 0 4px 12px rgba(13,110,253,0.35);
+        transition: all 0.2s ease;
+    }
+    .ai-gradient-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(13,110,253,0.45);
+        background: linear-gradient(135deg, #0b5ed7 0%, #520dc2 100%);
+        color: white;
+    }
+    .step-badge {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 8px;
+    }
+    .checkerboard-bg {
+        background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3hKhjIAmHxkYGBiIBYxEAw0DgxGNDcagRmMIDGkMxqBGEwAL0wIR1x07KwAAAABJRU5ErkJggg==') repeat;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-magic text-primary me-2"></i>1-Click AI Passport Studio</h2>
+            <p class="text-muted mb-0">Upload once — our AI auto-crops, removes background, enhances lighting, and tiles your print sheet in seconds.</p>
+        </div>
+        <a href="{{ url_for('photos.gallery') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-images me-1"></i> Gallery
+        </a>
+    </div>
+
+    <form id="ai-studio-form">
+        <div class="row g-4">
+            <!-- Left Column: Controls & Configuration -->
+            <div class="col-lg-5">
+                <!-- 1. Photo Selection -->
+                <div class="card studio-card mb-3">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h6 class="fw-bold mb-0"><span class="step-badge">1</span>Select or Upload Photo</h6>
+                    </div>
+                    <div class="card-body pt-0">
+                        <!-- Dropzone -->
+                        <div id="drop-zone" class="p-4 text-center border border-2 border-dashed rounded bg-light mb-3" style="cursor:pointer;">
+                            <i class="bi bi-cloud-arrow-up display-5 text-primary mb-2"></i>
+                            <h6 class="mb-1" id="drop-label">Click or Drop Photo Here</h6>
+                            <small class="text-muted">JPG, PNG, HEIC (Max 20MB)</small>
+                            <input type="file" id="file-input" name="file" class="d-none" accept=".jpg,.jpeg,.png,.heic">
+                        </div>
+
+                        <!-- Selected Preview Banner -->
+                        <div id="selected-file-info" class="d-flex align-items-center p-2 bg-light rounded border mb-3 {% if not selected_photo %}d-none{% endif %}">
+                            <img id="upload-preview-img" src="{% if selected_photo %}{{ url_for('photos.serve_image', photo_id=selected_photo.id, image_type='original') }}{% endif %}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;" alt="Preview">
+                            <div class="flex-grow-1 text-truncate">
+                                <span class="fw-bold small d-block text-truncate" id="selected-file-name">{% if selected_photo %}{{ selected_photo.original_filename }}{% else %}Selected Photo{% endif %}</span>
+                                <span class="badge bg-success small">Ready for AI</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="clear-photo-btn"><i class="bi bi-x"></i></button>
+                        </div>
+
+                        <input type="hidden" id="selected-photo-id" name="photo_id" value="{% if selected_photo %}{{ selected_photo.id }}{% endif %}">
+
+                        <!-- Recent Photos Picker -->
+                        {% if recent_photos %}
+                        <div class="mt-2">
+                            <label class="form-label small fw-semibold text-muted mb-2">Or select from recent uploads:</label>
+                            <div class="d-flex gap-2 overflow-auto pb-1">
+                                {% for rp in recent_photos %}
+                                <div class="recent-thumb-card text-center flex-shrink-0 {% if selected_photo and selected_photo.id == rp.id %}active{% endif %}" data-photo-id="{{ rp.id }}" data-filename="{{ rp.original_filename }}" data-src="{{ url_for('photos.serve_image', photo_id=rp.id, image_type='original') }}" style="width: 60px;">
+                                    <img src="{{ url_for('photos.serve_image', photo_id=rp.id, image_type='thumbnail') }}" class="img-fluid rounded" style="width:60px; height:60px; object-fit:cover;" alt="thumb">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 2. Passport & Country Size Specification -->
+                <div class="card studio-card mb-3">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h6 class="fw-bold mb-0"><span class="step-badge">2</span>Country & Passport Standard</h6>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="row g-2 mb-3">
+                            <div class="col-7">
+                                <label class="form-label small fw-semibold">Target Country</label>
+                                <select class="form-select" id="country-select" name="country_code">
+                                    <option value="US" selected>United States (2×2 in)</option>
+                                    <option value="IN">India (35×45 mm)</option>
+                                    <option value="GB">United Kingdom (35×45 mm)</option>
+                                    <option value="CA">Canada (50×70 mm)</option>
+                                    <option value="AU">Australia (35×45 mm)</option>
+                                    <option value="EU">Schengen / EU (35×45 mm)</option>
+                                    <option value="CUSTOM">Custom Dimensions...</option>
+                                </select>
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label small fw-semibold">Document Type</label>
+                                <select class="form-select" id="doc-type-select" name="document_type">
+                                    <option value="Passport" selected>Passport</option>
+                                    <option value="Visa">Visa</option>
+                                    <option value="ID Card">ID Card</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Custom Dimension Options -->
+                        <div id="custom-size-box" class="p-3 bg-light rounded border mb-3 d-none">
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <label class="form-label small">Width (mm)</label>
+                                    <input type="number" step="0.5" class="form-control form-control-sm" id="custom-w" name="custom_w" value="35">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label small">Height (mm)</label>
+                                    <input type="number" step="0.5" class="form-control form-control-sm" id="custom-h" name="custom_h" value="45">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label small">DPI</label>
+                                    <input type="number" class="form-control form-control-sm" id="custom-dpi" name="custom_dpi" value="300">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Background Color Choice -->
+                        <div>
+                            <label class="form-label small fw-semibold mb-2">Background Color</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="color-swatch-btn active" data-color="#FFFFFF" style="background:#FFFFFF;" title="Solid White"></button>
+                                <button type="button" class="color-swatch-btn" data-color="#F4F6F9" style="background:#F4F6F9;" title="Off White"></button>
+                                <button type="button" class="color-swatch-btn" data-color="#E8F0FE" style="background:#E8F0FE;" title="Light Blue"></button>
+                                <button type="button" class="color-swatch-btn" data-color="#E0E0E0" style="background:#E0E0E0;" title="Light Grey"></button>
+                                <input type="color" id="custom-color-picker" class="form-control form-control-color p-0 border-0" value="#FFFFFF" style="width:36px; height:36px; cursor:pointer;" title="Custom Color">
+                                <span class="small text-muted ms-2" id="bg-color-label">White (#FFFFFF)</span>
+                                <input type="hidden" id="bg-color-input" name="bg_color" value="#FFFFFF">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Print Sheet & Paper Size Layout -->
+                <div class="card studio-card mb-3">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h6 class="fw-bold mb-0"><span class="step-badge">3</span>Print Sheet Layout</h6>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Paper Size</label>
+                                <select class="form-select" id="sheet-size-select" name="sheet_size">
+                                    <option value="4x6" selected>4×6 inches (Photo Paper)</option>
+                                    <option value="A4">A4 Sheet (Letter/Standard)</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Copies on Sheet</label>
+                                <select class="form-select" id="photo-count-select" name="photo_count">
+                                    <option value="4">4 Photos</option>
+                                    <option value="6">6 Photos</option>
+                                    <option value="8" selected>8 Photos (Fills 4×6)</option>
+                                    <option value="12">12 Photos</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="guides-check" name="cutting_guides" value="true" checked>
+                            <label class="form-check-label small" for="guides-check">Include printed cutting line guides</label>
+                        </div>
+
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="apply-enhancement-check" name="apply_enhancement" value="true">
+                            <label class="form-check-label small" for="apply-enhancement-check">
+                                Apply AI Color & Lighting Filters <span class="text-muted">(Off by default for 100% natural photo)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. AI Engine & Cloud API (Optional) -->
+                <div class="card studio-card mb-3">
+                    <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><span class="step-badge">4</span>AI Engine & Cloud API <small class="text-muted fw-normal">(Optional)</small></h6>
+                        <span class="badge bg-secondary-subtle text-secondary small">Optional</span>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">AI Provider</label>
+                            <select class="form-select form-select-sm" id="ai-provider-select" name="ai_provider">
+                                <option value="none" selected>Direct Studio Mode (No AI Filters / 100% Natural)</option>
+                                <option value="auto">✨ Smart Hybrid AI (Local Studio Engine)</option>
+                                <option value="openai">OpenAI (ChatGPT / GPT-4o Vision API)</option>
+                                <option value="gemini">Google Gemini 1.5 Flash Vision API</option>
+                                <option value="clipdrop">Clipdrop / Stability AI Studio API</option>
+                            </select>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label small fw-semibold">Custom API Key <span class="text-muted fw-normal">(Optional)</span></label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input type="password" class="form-control" id="api-key-input" name="api_key" placeholder="sk-... / AIza... (optional)">
+                                <button class="btn btn-outline-secondary" type="button" id="toggle-key-visibility"><i class="bi bi-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Run Button -->
+                <button type="submit" id="generate-ai-btn" class="btn ai-gradient-btn w-100 py-3 fs-5 rounded-3 mb-4">
+                    <i class="bi bi-printer me-2"></i>Generate Passport & 4×6 Sheet
+                </button>
+            </div>
+
+            <!-- Right Column: Live Output & Results -->
+            <div class="col-lg-7">
+                <div class="card studio-card h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <ul class="nav nav-pills card-header-pills" id="resultTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active py-1 px-3 fw-semibold small" id="sheet-tab" data-bs-toggle="pill" data-bs-target="#tab-sheet" type="button" role="tab">
+                                    <i class="bi bi-printer me-1"></i>Print Sheet
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-1 px-3 fw-semibold small" id="passport-tab" data-bs-toggle="pill" data-bs-target="#tab-passport" type="button" role="tab">
+                                    <i class="bi bi-person-bounding-box me-1"></i>Single Passport Photo
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link py-1 px-3 fw-semibold small" id="compare-tab" data-bs-toggle="pill" data-bs-target="#tab-compare" type="button" role="tab">
+                                    <i class="bi bi-arrow-left-right me-1"></i>Comparison
+                                </button>
+                            </li>
+                        </ul>
+                        <span id="ai-status-badge" class="badge bg-secondary">Awaiting Input</span>
+                    </div>
+
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center p-4 position-relative" id="result-container" style="min-height: 520px; background:#f8f9fa;">
+                        
+                        <!-- Initial Placeholder State -->
+                        <div id="initial-placeholder" class="text-center py-5 text-muted">
+                            <div class="mb-3">
+                                <i class="bi bi-magic display-1 text-primary opacity-50"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark">Ready to Generate Your Photos</h5>
+                            <p class="small text-muted mx-auto" style="max-width: 360px;">
+                                Select an image on the left and click <strong>Generate AI Passport</strong>. Your compliant photo and print sheet will appear here instantly.
+                            </p>
+                        </div>
+
+                        <!-- Processing State -->
+                        <div id="processing-state" class="d-none text-center py-5">
+                            <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+                            <h5 class="fw-bold text-dark" id="processing-step-text">AI is enhancing your photo...</h5>
+                            <div class="progress my-3 mx-auto" style="width: 260px; height: 8px;">
+                                <div id="ai-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 80%;"></div>
+                            </div>
+                            <p class="text-muted small">Aligning face &bull; Removing background &bull; Tuning lighting &bull; Tiling paper</p>
+                        </div>
+
+                        <!-- Result Tabs Content -->
+                        <div class="tab-content w-100 d-none" id="resultTabContent">
+                            <!-- Tab 1: Print Sheet -->
+                            <div class="tab-pane fade show active text-center" id="tab-sheet" role="tabpanel">
+                                <div class="bg-dark p-3 rounded mb-3 d-flex justify-content-center align-items-center" style="min-height: 380px;">
+                                    <img id="out-sheet-img" src="" class="img-fluid rounded shadow" style="max-height: 400px;" alt="Print Sheet Preview">
+                                </div>
+                                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                    <a id="btn-download-pdf" href="#" class="btn btn-danger px-4 fw-semibold">
+                                        <i class="bi bi-file-earmark-pdf-fill me-1"></i>Download Ready-to-Print PDF
+                                    </a>
+                                    <a id="btn-download-sheet-jpg" href="#" class="btn btn-outline-primary px-3 fw-semibold">
+                                        <i class="bi bi-file-earmark-image me-1"></i>Download Sheet (JPG)
+                                    </a>
+                                </div>
+                                <p class="small text-muted mt-2 mb-0" id="sheet-spec-label"></p>
+                            </div>
+
+                            <!-- Tab 2: Single Passport Photo -->
+                            <div class="tab-pane fade text-center" id="tab-passport" role="tabpanel">
+                                <div class="bg-light p-4 rounded mb-3 d-flex justify-content-center align-items-center checkerboard-bg" style="min-height: 380px;">
+                                    <img id="out-passport-img" src="" class="img-fluid rounded shadow border" style="max-height: 360px;" alt="Passport Photo">
+                                </div>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a id="btn-download-passport" href="#" class="btn btn-success px-4 fw-semibold">
+                                        <i class="bi bi-download me-1"></i>Download Single Passport Photo (JPG)
+                                    </a>
+                                </div>
+                                <p class="small text-muted mt-2 mb-0" id="passport-spec-label"></p>
+                            </div>
+
+                            <!-- Tab 3: Comparison -->
+                            <div class="tab-pane fade text-center" id="tab-compare" role="tabpanel">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <div class="p-2 border rounded bg-white shadow-sm">
+                                            <h6 class="text-muted small fw-bold mb-2">Original</h6>
+                                            <img id="out-orig-img" src="" class="img-fluid rounded" style="max-height: 300px;" alt="Original">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 border rounded bg-white shadow-sm">
+                                            <h6 class="text-primary small fw-bold mb-2">Passport Photo</h6>
+                                            <img id="out-compare-passport-img" src="" class="img-fluid rounded" style="max-height: 300px;" alt="Processed">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-success d-flex align-items-center justify-content-center py-2 mb-0 small">
+                                    <i class="bi bi-check-circle-fill me-2"></i> Clean passport proportion sizing and 8-copy 4×6 print sheet with 100% natural photo quality.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('ai-studio-form');
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const selectedFileInfo = document.getElementById('selected-file-info');
+    const uploadPreviewImg = document.getElementById('upload-preview-img');
+    const selectedFileName = document.getElementById('selected-file-name');
+    const selectedPhotoId = document.getElementById('selected-photo-id');
+    const clearPhotoBtn = document.getElementById('clear-photo-btn');
+    
+    const countrySelect = document.getElementById('country-select');
+    const customSizeBox = document.getElementById('custom-size-box');
+    const colorSwatches = document.querySelectorAll('.color-swatch-btn');
+    const customColorPicker = document.getElementById('custom-color-picker');
+    const bgColorInput = document.getElementById('bg-color-input');
+    const bgColorLabel = document.getElementById('bg-color-label');
+    
+    const initialPlaceholder = document.getElementById('initial-placeholder');
+    const processingState = document.getElementById('processing-state');
+    const resultTabContent = document.getElementById('resultTabContent');
+    const generateBtn = document.getElementById('generate-ai-btn');
+    const aiStatusBadge = document.getElementById('ai-status-badge');
+    
+    const outSheetImg = document.getElementById('out-sheet-img');
+    const outPassportImg = document.getElementById('out-passport-img');
+    const outOrigImg = document.getElementById('out-orig-img');
+    const outComparePassportImg = document.getElementById('out-compare-passport-img');
+    
+    const btnDownloadPdf = document.getElementById('btn-download-pdf');
+    const btnDownloadSheetJpg = document.getElementById('btn-download-sheet-jpg');
+    const btnDownloadPassport = document.getElementById('btn-download-passport');
+    
+    const sheetSpecLabel = document.getElementById('sheet-spec-label');
+    const passportSpecLabel = document.getElementById('passport-spec-label');
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+
+    // Drag and drop / file input
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            handleSelectedFile(this.files[0]);
+        }
+    });
+
+    ['dragenter', 'dragover'].forEach(e => {
+        dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.add('bg-white', 'border-primary'); });
+    });
+    ['dragleave', 'drop'].forEach(e => {
+        dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.remove('bg-white', 'border-primary'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            handleSelectedFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    function handleSelectedFile(file) {
+        selectedFileName.textContent = file.name;
+        selectedPhotoId.value = '';
+        document.querySelectorAll('.recent-thumb-card').forEach(c => c.classList.remove('active'));
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadPreviewImg.src = e.target.result;
+            selectedFileInfo.classList.remove('d-none');
+            dropZone.classList.add('d-none');
+            aiStatusBadge.textContent = 'Photo Ready';
+            aiStatusBadge.className = 'badge bg-primary';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Recent photos click
+    document.querySelectorAll('.recent-thumb-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.recent-thumb-card').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            
+            selectedPhotoId.value = this.dataset.photoId;
+            selectedFileName.textContent = this.dataset.filename;
+            uploadPreviewImg.src = this.dataset.src;
+            
+            fileInput.value = '';
+            selectedFileInfo.classList.remove('d-none');
+            dropZone.classList.add('d-none');
+            aiStatusBadge.textContent = 'Photo Selected';
+            aiStatusBadge.className = 'badge bg-primary';
+        });
+    });
+
+    clearPhotoBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        selectedPhotoId.value = '';
+        selectedFileInfo.classList.add('d-none');
+        dropZone.classList.remove('d-none');
+        document.querySelectorAll('.recent-thumb-card').forEach(c => c.classList.remove('active'));
+        aiStatusBadge.textContent = 'Awaiting Input';
+        aiStatusBadge.className = 'badge bg-secondary';
+    });
+
+    // Country select change
+    countrySelect.addEventListener('change', function() {
+        if (this.value === 'CUSTOM') {
+            customSizeBox.classList.remove('d-none');
+        } else {
+            customSizeBox.classList.add('d-none');
+        }
+    });
+
+    // Color Swatch pickers
+    colorSwatches.forEach(btn => {
+        btn.addEventListener('click', function() {
+            colorSwatches.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const color = this.dataset.color;
+            bgColorInput.value = color;
+            customColorPicker.value = color;
+            bgColorLabel.textContent = this.title + ' (' + color + ')';
+        });
+    });
+
+    customColorPicker.addEventListener('input', function() {
+        colorSwatches.forEach(b => b.classList.remove('active'));
+        bgColorInput.value = this.value;
+        bgColorLabel.textContent = 'Custom (' + this.value + ')';
+    });
+
+    // API Key localStorage & visibility toggle
+    const apiKeyInput = document.getElementById('api-key-input');
+    const toggleKeyVisibility = document.getElementById('toggle-key-visibility');
+    const aiProviderSelect = document.getElementById('ai-provider-select');
+    
+    // Load saved API key from localStorage if present
+    const savedApiKey = localStorage.getItem('passport_ai_api_key');
+    if (savedApiKey) {
+        apiKeyInput.value = savedApiKey;
+    }
+    const savedProvider = localStorage.getItem('passport_ai_provider');
+    if (savedProvider) {
+        aiProviderSelect.value = savedProvider;
+    }
+
+    if (toggleKeyVisibility && apiKeyInput) {
+        toggleKeyVisibility.addEventListener('click', function() {
+            const isPassword = apiKeyInput.type === 'password';
+            apiKeyInput.type = isPassword ? 'text' : 'password';
+            this.innerHTML = isPassword ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+        });
+        
+        apiKeyInput.addEventListener('change', function() {
+            if (this.value.trim()) {
+                localStorage.setItem('passport_ai_api_key', this.value.trim());
+            } else {
+                localStorage.removeItem('passport_ai_api_key');
+            }
+        });
+        
+        aiProviderSelect.addEventListener('change', function() {
+            localStorage.setItem('passport_ai_provider', this.value);
+        });
+    }
+
+    // Form Submit (One-Click AI Execution)
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!selectedPhotoId.value && (!fileInput.files || fileInput.files.length === 0)) {
+            alert('Please select or upload a photo first.');
+            return;
+        }
+
+        const formData = new FormData(form);
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        }
+
+        // Show processing UI
+        initialPlaceholder.classList.add('d-none');
+        resultTabContent.classList.add('d-none');
+        processingState.classList.remove('d-none');
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>AI Processing...';
+        aiStatusBadge.textContent = 'Processing with AI API...';
+        aiStatusBadge.className = 'badge bg-warning text-dark';
+
+        fetch('/photos/ai-studio/generate', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(d => { throw new Error(d.error || 'Processing failed'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Populate result images
+                outSheetImg.src = data.printsheet_jpg_url;
+                outPassportImg.src = data.passport_url;
+                outOrigImg.src = data.original_url;
+                outComparePassportImg.src = data.passport_url;
+
+                // Setup download buttons
+                btnDownloadPdf.href = data.printsheet_pdf_url;
+                btnDownloadSheetJpg.href = data.printsheet_jpg_url;
+                btnDownloadPassport.href = data.passport_download_url;
+
+                // Spec labels
+                sheetSpecLabel.textContent = data.sheet_info + ' • ' + data.dimension_label;
+                passportSpecLabel.textContent = data.dimension_label;
+
+                // Switch to results tab
+                processingState.classList.add('d-none');
+                resultTabContent.classList.remove('d-none');
+                
+                if (data.cloud_ai && data.cloud_ai.used_api) {
+                    aiStatusBadge.textContent = `✨ ${data.cloud_ai.provider} (API)`;
+                    aiStatusBadge.className = 'badge bg-success';
+                } else {
+                    aiStatusBadge.textContent = 'Completed ✨';
+                    aiStatusBadge.className = 'badge bg-success';
+                }
+                
+                // Select first tab
+                bootstrap.Tab.getOrCreateInstance(document.getElementById('sheet-tab')).show();
+            } else {
+                throw new Error(data.error || 'Failed to generate');
+            }
+        })
+        .catch(err => {
+            processingState.classList.add('d-none');
+            initialPlaceholder.classList.remove('d-none');
+            aiStatusBadge.textContent = 'Error';
+            aiStatusBadge.className = 'badge bg-danger';
+            alert('AI Generation Error: ' + err.message);
+        })
+        .finally(() => {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="bi bi-stars me-2"></i>Generate AI Passport & Sheet';
+        });
+    });
+});
+</script>
+{% endblock %}

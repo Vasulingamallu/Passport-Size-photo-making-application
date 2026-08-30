@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Admin Dashboard</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-3 mb-4">
+            <div class="card bg-primary text-white text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-white-50">Total Users</h6>
+                    <h1 class="display-4">{{ total_users }}</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card bg-success text-white text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-white-50">Total Photos</h6>
+                    <h1 class="display-4">{{ total_photos }}</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card bg-info text-white text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-white-50">Photos Today</h6>
+                    <h1 class="display-4">{{ photos_today }}</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card bg-warning text-dark text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-black-50">Storage Used</h6>
+                    <h1 class="display-4">{{ storage_used }}</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">Processing Status</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label>Success (85%)</label>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Failed (10%)</label>
+                        <div class="progress">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 10%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Pending (5%)</label>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 5%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">Quick Links</div>
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary btn-lg mb-3">Manage Users</a>
+                    <a href="{{ url_for('admin.photos') }}" class="btn btn-outline-secondary btn-lg">View All Photos</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">Recent Activity (Jobs)</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in recent_jobs %}
+                        <tr>
+                            <td>{{ job.id }}</td>
+                            <td>{{ job.job_type }}</td>
+                            <td><span class="badge bg-{{ 'success' if job.status == 'completed' else 'warning' }}">{{ job.status }}</span></td>
+                            <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No recent activity.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
