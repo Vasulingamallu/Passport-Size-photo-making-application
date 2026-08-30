@@ -10,11 +10,22 @@ load_dotenv()
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 
+def _get_database_uri() -> str:
+    """Get database URI with fallback to SQLite and postgres fix for SQLAlchemy 2.0."""
+    db_url = os.getenv('DATABASE_URL', '')
+    if not db_url or not db_url.strip():
+        return f'sqlite:///{os.path.join(BASE_DIR, "passportpro.db")}'
+    if db_url.startswith('postgres://'):
+        return db_url.replace('postgres://', 'postgresql://', 1)
+    return db_url
+
+
 class Config:
     """Base configuration."""
 
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = _get_database_uri()
 
     # Upload settings
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 20 * 1024 * 1024))  # 20MB
@@ -38,19 +49,12 @@ class Config:
 
 class DevelopmentConfig(Config):
     """Development configuration."""
-
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL',
-        f'sqlite:///{os.path.join(BASE_DIR, "passportpro.db")}'
-    )
 
 
 class ProductionConfig(Config):
     """Production configuration."""
-
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', '')
 
     @classmethod
     def init_app(cls, app):
@@ -59,7 +63,6 @@ class ProductionConfig(Config):
 
 class TestingConfig(Config):
     """Testing configuration."""
-
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
