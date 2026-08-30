@@ -22,13 +22,13 @@ venv.bak/
 *.sqlite3
 instance/
 
-# Application Uploads & Storage (Preserve directory structure if needed)
+# Application Uploads & Storage
 uploads/
 !uploads/.gitkeep
 
-# Models & AI Cache
+# AI Model Cache files (do not ignore app/models)
 .u2net/
-models/
+*.onnx
 
 # Distribution / Packaging
 build/
